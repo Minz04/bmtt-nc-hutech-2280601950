@@ -4,6 +4,9 @@ from cipher.playfair import PlayFairCipher
 from cipher.vigenere import VigenereCipher
 from cipher.railfence import RailfenceCipher
 from cipher.transposition import TranspositionCipher
+import os
+import subprocess
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = "../platforms"
 
 app = Flask(__name__)
 
@@ -34,6 +37,7 @@ def caesar_decrypt():
 @app.route("/playfair")
 def playfair():
     return render_template('playfair.html')
+
 @app.route("/playfair_encrypt", methods=['POST'])
 def playfair_encrypt():
     text = request.form['inputPlainText']
@@ -62,6 +66,7 @@ def playfair_decrypt():
 @app.route("/vigenere")
 def vigenere():
     return render_template('vigenere.html')
+
 @app.route("/vigenere_encrypt", methods=['POST'])
 def vigenere_encrypt():
     text = request.form['inputPlainText']
@@ -81,6 +86,7 @@ def vigenere_decrypt():
 @app.route("/railfence")
 def railfence():
     return render_template('railfence.html')
+
 
 @app.route("/railfence_encrypt", methods=['POST'])
 def railfence_encrypt():

@@ -1,126 +1,111 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
-from ui.rsa import Ui_MainWindow
+import os  
 import requests
 
-class MyApp(QMainWindow):
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from ui.rsa import Ui_MainWindow 
+
+
+class RSAGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.btn_gen_keys.clicked.connect(self.call_api_gen_keys)
-        self.ui.btn_encrypt.clicked.connect(self.call_api_encrypt)
-        self.ui.btn_decrypt.clicked.connect(self.call_api_decrypt)
-        self.ui.btn_sign.clicked.connect(self.call_api_sign)
-        self.ui.btn_verify.clicked.connect(self.call_api_verify)
+        
+        self.ui.btn_gen_keys.clicked.connect(self.generate_keys)
+        self.ui.btn_encrypt.clicked.connect(self.encrypt_message)
+        self.ui.btn_decrypt.clicked.connect(self.decrypt_message)
+        self.ui.btn_sign.clicked.connect(self.sign_message)
+        self.ui.btn_verify.clicked.connect(self.verify_signature)
 
-    def call_api_gen_keys(self):
-        url = "http://127.0.0.1:5000/api/rsa/generate_keys"
+    def generate_keys(self):
+        url = "http://127.0.0.1:5000/api/rsa/generate-keys"
         try:
             response = requests.get(url)
             if response.status_code == 200:
-                data = response.json()
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setText(data["message"])
-                msg.exec_()
+                QMessageBox.information(self, "Success", "Keys generated successfully")
             else:
-                print("Error while calling API")
+                QMessageBox.critical(self, "Error", f"Server returned status code {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error: %s" % e.message)
-            
-    def call_api_encrypt(self):
+            QMessageBox.critical(self, "Error", str(e))
+    
+    def encrypt_message(self):
         url = "http://127.0.0.1:5000/api/rsa/encrypt"
         payload = {
-            "message": self.ui.txt_plain_text.toPlainText(),
+            "message": self.ui.txt_input_message.toPlainText(),
             "key_type": "public"
         }
         try:
             response = requests.post(url, json=payload)
             if response.status_code == 200:
                 data = response.json()
-                self.ui.txt_cipher_text.setText(data["encrypted_message"])
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setText("Encryption Failed") # Corrected message to indicate failure
-                msg.exec_()
+                self.ui.txt_encrypted_message.setText(data['encrypted_message'])
+                QMessageBox.information(self, "Success", "Message encrypted successfully")
             else:
-                print("Error while calling API")
+                QMessageBox.critical(self, "Error", f"Server returned status code {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error: %s" % e.message)
-
-    def call_api_decrypt(self):
+            QMessageBox.critical(self, "Error", str(e))
+    
+    def decrypt_message(self):
         url = "http://127.0.0.1:5000/api/rsa/decrypt"
         payload = {
-            "ciphertext": self.ui.txt_cipher_text.toPlainText(),
+            "ciphertext": self.ui.txt_encrypted_message.toPlainText(),
             "key_type": "private"
         }
         try:
             response = requests.post(url, json=payload)
             if response.status_code == 200:
                 data = response.json()
-                self.ui.txt_plain_text.setText(data["decrypted_message"])
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setText("Decrypted Successfully")
-                msg.exec_()
+                self.ui.txt_decrypted_message.setText(data['decrypted_message'])
+                QMessageBox.information(self, "Success", "Message decrypted successfully")
             else:
-                print("Error while calling API")
+                QMessageBox.critical(self, "Error", f"Server returned status code {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error: %s" % e.message)
-
-    def call_api_sign(self):
+            QMessageBox.critical(self, "Error", str(e))
+    
+    def sign_message(self):
         url = "http://127.0.0.1:5000/api/rsa/sign"
         payload = {
-            "message": self.ui.txt_info.toPlainText(),
+            "message": self.ui.txt_message_to_sign.toPlainText()
         }
         try:
             response = requests.post(url, json=payload)
             if response.status_code == 200:
                 data = response.json()
-                self.ui.txt_sign.setText(data["signature"])
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setText("Signed Successfully")
-                msg.exec_()
+                self.ui.txt_signature.setText(data['signature'])
+                QMessageBox.information(self, "Success", "Message signed successfully")
             else:
-                print("Error while calling API")
+                QMessageBox.critical(self, "Error", f"Server returned status code {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error: %s" % e.message)
-
-    def call_api_verify(self):
+            QMessageBox.critical(self, "Error", str(e))
+    
+    def verify_signature(self):
         url = "http://127.0.0.1:5000/api/rsa/verify"
         payload = {
-            "message": self.ui.txt_info.toPlainText(),
-            "signature": self.ui.txt_sign.toPlainText()
+            "message": self.ui.txt_message_to_sign.toPlainText(),
+            "signature": self.ui.txt_signature.toPlainText()
         }
         try:
             response = requests.post(url, json=payload)
             if response.status_code == 200:
                 data = response.json()
-                if data["is_verified"]:
-                    msg = QMessageBox()
-                    msg.setIcon(QMessageBox.Information)
-                    msg.setText("Verified Successfully")
-                    msg.exec_()
+                if data['verified']:
+                    QMessageBox.information(self, "Success", "Signature verified successfully")
                 else:
-                    msg = QMessageBox()
-                    msg.setIcon(QMessageBox.Information)
-                    msg.setText("Verification Failed") # Corrected message to indicate failure
-                    msg.exec_()
+                    QMessageBox.warning(self, "Failed", "Signature verification failed")
             else:
-                 msg = QMessageBox()
-                 msg.setIcon(QMessageBox.Information)
-                 msg.setText("Verification Failed") # Corrected message to indicate failure
-                 msg.exec_()
-                 print("Error while calling API")
-
-
+                QMessageBox.critical(self, "Error", f"Server returned status code {response.status_code}")
         except requests.exceptions.RequestException as e:
-            print(f"Error: %s" % e.message)
+            QMessageBox.critical(self, "Error", str(e))
+
+
+def suppress_qt_warnings():
+    os.environ["QT_LOGGING_RULES"] = "qt.qpa.fonts=false"
+
 
 if __name__ == "__main__":
+    suppress_qt_warnings()
     app = QApplication(sys.argv)
-    window = MyApp()
+    window = RSAGUI()
     window.show()
     sys.exit(app.exec_())
